@@ -26,13 +26,34 @@ const Message = ({data, currentUser}) => {
                         />
                     </Grid>
                 )}
-                <Grid item>
-                    <ListItemText
-                        align={isAdmin ? "center" : (isCurrentUser ? "right" : "left")}
-                        primary={data.message}
-                        primaryTypographyProps={{ color: isAdmin ? '#00796b' : 'inherit' }}
-                    />
+                <Grid item xs={12} display="flex" justifyContent={isAdmin ? "center" : (isCurrentUser ? "flex-end" : "flex-start")}>
+                    {!isAdmin ? (
+                        <Box
+                            sx={{
+                                maxWidth: '60%',
+                                padding: '10px',
+                                borderRadius: '10px',
+                                backgroundColor: isCurrentUser ? '#b2dfdb' : '#f1f0f0',
+                                color: 'inherit',
+                                textAlign: isCurrentUser ? "right" : "left",
+                                boxShadow: '0px 1px 3px rgba(0,0,0,0.2)',
+                                wordBreak: 'break-word',
+                            }}
+                        >
+                            <ListItemText
+                                primary={data.message}
+                                primaryTypographyProps={{ color: 'inherit' }}
+                            />
+                        </Box>
+                    ) : (
+                        <ListItemText
+                            align="center"
+                            primary={data.message}
+                            primaryTypographyProps={{ color: '#00796b' }}
+                        />
+                    )}
                 </Grid>
+
                 <Grid item>
                     <ListItemText
                         align={isAdmin ? "center" : (isCurrentUser ? "right" : "left")}

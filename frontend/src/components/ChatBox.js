@@ -4,6 +4,7 @@ import { Box, Paper, TextField, IconButton, List, ListItem, ListItemText, Divide
 import SendIcon from '@mui/icons-material/Send';
 import Message from "./Message";
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 
 const getTime = (now) => {
@@ -12,12 +13,54 @@ const getTime = (now) => {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
 }
-
+/*
+const generateRandomUsername = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let username = '';
+    const length = 6;
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        username += characters[randomIndex];
+    }
+    return username;
+}
+*/
 const ChatBox = ({socket}) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [currentUser, setCurrentUser] = useState('');
     const messageEndRef = useRef(null);
+
+  /*  useEffect(() => {
+        const savedUser = Cookies.get('username');
+        if (savedUser) {
+            setCurrentUser(savedUser);
+            socket.emit('set_username', { username: savedUser });
+        } else {
+            const username = generateRandomUsername();
+            setCurrentUser(username);
+            Cookies.set('username', username, { expires: 7 });
+            socket.emit('set_username', { username });
+        }
+    }, []); */
+
+   /* useEffect(() => {
+        // Check if the username cookie exists
+        let username = Cookies.get('username');
+
+        if (!username) {
+            // If not, listen for the 'set-cookie' event from the server
+            socket.on('set-cookie', (generatedUsername) => {
+                // Set the cookie with the username received from the server
+                Cookies.set('username', generatedUsername, { expires: 7 }); // Cookie expires in 7 days
+                console.log(`Username set: ${generatedUsername}`);
+            });
+        } else {
+            console.log(`Existing username: ${username}`);
+        }
+    }, []);
+    */
+
 
     useEffect(() => {
         axios.get('http://localhost:4000/messages')
@@ -28,6 +71,7 @@ const ChatBox = ({socket}) => {
                 console.error('Error loading old messages:', error);
             });
     }, []);
+
 
     useEffect(() => {
         if (!socket) return;
@@ -86,8 +130,6 @@ const ChatBox = ({socket}) => {
             socket.off('user_left');
         };
     }, [socket]);
-
-
 
     const handleSend = () => {
         if (newMessage.trim()) {
@@ -163,6 +205,5 @@ const ChatBox = ({socket}) => {
         </Grid>
     );
 };
-
 
 export default ChatBox;

@@ -1,15 +1,18 @@
-require('dotenv').config();
 
 const pool = require('./db_connection')
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require("socket.io");
+const messageRoutes = require('./routes/messages');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/', messageRoutes);
+app.use(cookieParser());
 
 const server = http.createServer(app);
 
@@ -34,9 +37,22 @@ const generateRandomUsername = () => {
 const activeUsers = {};
 const ADMIN = "Admin";
 
+
 io.on("connection", (socket) => {
     let time = new Date();
+
     let currentUser = generateRandomUsername();
+/*
+    const cookies = socket.handshake.headers.cookie;
+    let currentUser;
+
+    if (cookies && cookies.includes('username')) {
+        currentUser = cookies.split('; ').find(row => row.startsWith('username')).split('=')[1];
+    } else {
+        currentUser = generateRandomUsername();
+        socket.emit('set-cookie', currentUser);
+    }
+*/
     activeUsers[socket.id] = currentUser;
 
     console.log(' %s sockets connected', io.engine.clientsCount);
@@ -67,7 +83,6 @@ io.on("connection", (socket) => {
 
     socket.on("send_message", (data) => {
         io.emit("receive_message", data);
-
 
         pool.query('SELECT user_id FROM "user" where username=$1;', [data.sender], (err, result) => {
             if(err) {
