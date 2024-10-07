@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const pool = require('./db_connection')
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -30,19 +31,26 @@ const generateRandomUsername = () => {
     return username;
 }
 
-const users = {};
 const activeUsers = {};
 const ADMIN = "Admin";
 
 io.on("connection", (socket) => {
-    console.log(' %s sockets connected', io.engine.clientsCount);
-    let currentUser = generateRandomUsername();
-    console.log('New user', currentUser);
-    users[socket.id] = currentUser;
-    activeUsers[socket.id] = currentUser;
-    io.emit('active_users', Object.values(activeUsers));
     let time = new Date();
+    let currentUser = generateRandomUsername();
+    activeUsers[socket.id] = currentUser;
 
+    console.log(' %s sockets connected', io.engine.clientsCount);
+    console.log('New user', currentUser);
+
+    pool.query('INSERT INTO "user" (username) VALUES ($1);', [currentUser], (err) =>  {
+        if (err) {
+            console.error('Error creating user:', err);
+        } else {
+            console.log('User created:', currentUser);
+        }
+    });
+
+    io.emit('active_users', Object.values(activeUsers));
 
     socket.broadcast.emit('new_user', {
         sender: ADMIN,
@@ -58,8 +66,24 @@ io.on("connection", (socket) => {
     })
 
     socket.on("send_message", (data) => {
-        console.log("Message Received ", data);
         io.emit("receive_message", data);
+
+
+        pool.query('SELECT user_id FROM "user" where username=$1;', [data.sender], (err, result) => {
+            if(err) {
+                console.error('Error getting user_id;', err)
+            } else {
+                const sender_id = result.rows[0].user_id;
+                pool.query('INSERT INTO message (text, sender, time) VALUES ($1, $2, $3);', [data.message, sender_id, data.time], (err) =>  {
+                    if (err) {
+                        console.error('Error adding message:', err);
+                    } else {
+                        console.log('Message added');
+                    }
+                });
+            }
+        })
+
     });
 
     socket.on('disconnect', () => {
@@ -79,5 +103,5 @@ io.on("connection", (socket) => {
 const PORT = 4000;
 
 server.listen(PORT, () => {
-    console.log("Server is running on port" + PORT);
+    console.log("Server is running on port " + PORT);
 });

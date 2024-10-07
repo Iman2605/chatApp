@@ -18,13 +18,18 @@ const ActiveUsers = ({socket}) => {
     }, [socket]);
 
     return(
-        <Grid2 container sx = {{width: '100%', alignItems: 'flex-start'}}>
-            <Box sx={{ padding: '10px', color: 'black', width: '100%'}}>
+        <Grid2 container sx = {{width: '100%', alignItems: 'flex-start', padding: '20px 0'}}>
+            <Box sx={{ padding: '10px', color: '#00796b', width: '100%'}}>
                 <Typography variant="h5" align="center">Active Users</Typography>
             </Box>
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', padding: '16px'}}>
+            <Box sx={{
+                flexGrow: 1,
+                overflowY: 'auto',
+                padding: '16px',
+                maxHeight: 'calc(100vh - 100px)'
+            }}>
                 <List>
-                    {activeUsers && activeUsers.map((user, index) => (
+                    {activeUsers?.map((user, index) => (
                         <ListItem key={index}>
                             <ListItemIcon>
                                 <PersonOutlineIcon />

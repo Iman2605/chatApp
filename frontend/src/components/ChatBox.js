@@ -3,6 +3,8 @@ import Grid from '@mui/material/Grid2';
 import { Box, Paper, TextField, IconButton, List, ListItem, ListItemText, Divider, Typography } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import Message from "./Message";
+import axios from 'axios';
+
 
 const getTime = (now) => {
     now = new Date();
@@ -16,6 +18,16 @@ const ChatBox = ({socket}) => {
     const [newMessage, setNewMessage] = useState('');
     const [currentUser, setCurrentUser] = useState('');
     const messageEndRef = useRef(null);
+
+    useEffect(() => {
+        axios.get('http://localhost:4000/messages')
+            .then((response) => {
+                setMessages(response.data);
+            })
+            .catch((error) => {
+                console.error('Error loading old messages:', error);
+            });
+    }, []);
 
     useEffect(() => {
         if (!socket) return;
@@ -32,7 +44,6 @@ const ChatBox = ({socket}) => {
         });
 
         socket.on('welcome_message', (data) => {
-            console.log(data.message);
             setCurrentUser(data.username);
             setMessages((prevMessages) => [
                 ...prevMessages,
@@ -90,13 +101,19 @@ const ChatBox = ({socket}) => {
         messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
 
     return (
-        <Grid container sx={{ height: '100%', width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#b2dfdb'}}>
+        <Grid container
+              sx={{ height: '100%',
+                  width: '100%',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#b2dfdb',
+                  padding: '20px 0'}}>
             <Grid item  sx={{ height: '100%', width: '100%'}}>
                 <Paper
                     square={false}
@@ -109,13 +126,13 @@ const ChatBox = ({socket}) => {
                         margin: 'auto',
                     }}
                 >
-                    <Box sx={{ padding: '10px', backgroundColor: '#00796b', color: 'white' }}>
+                    <Box sx={{padding: '10px', backgroundColor: '#00796b', color: 'white', borderRadius: '5px 5px 0 0' }}>
                         <Typography variant="h5" align="center">Chat</Typography>
                     </Box>
 
                     <Grid item sx={{ flexGrow: 1, overflowY: 'auto', padding: '16px' }}>
                         <List>
-                            {messages.map((message, index) => (
+                            {messages?.map((message, index) => (
                                 <ListItem key={index}>
                                     <Message data={message} currentUser={currentUser}></Message>
                                 </ListItem>
@@ -126,7 +143,6 @@ const ChatBox = ({socket}) => {
 
                     <Divider />
 
-                    {/* Input Area */}
                     <Grid item sx={{ padding: '10px', display: 'flex', alignItems: 'center' }}>
                         <TextField
                             label="Type your message"
