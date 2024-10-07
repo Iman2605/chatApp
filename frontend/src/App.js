@@ -1,25 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import ChatBox from "./components/ChatBox";
+import Grid from "@mui/material/Grid2";
+import ActiveUsers from "./components/ActiveUsers";
+import useSocket from "./services/socket";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
 
+
+const App = () => {
+    const socket = useSocket();
+
+    return (
+        <Grid container sx={{ height: '100vh' }}>
+            <Grid item size = {2} sx={{ height: '100%' }}>
+                <ActiveUsers socket={socket} />
+            </Grid>
+            <Grid item size = {10} sx={{ height: '100%' }}>
+                <ChatBox socket={socket} />
+            </Grid>
+        </Grid>
+    );
+};
 export default App;
