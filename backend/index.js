@@ -46,11 +46,12 @@ let currentUser;
 let firstVisit;
 io.engine.on("initial_headers", (headers, request) => {
     const cookies = request.headers.cookie ? parse(request.headers.cookie) : {};
+    console.log("Pocetak: " + cookies);
     if (!cookies.username) {
         const newUsername = generateRandomUsername();
         currentUser = newUsername;
         firstVisit = true;
-
+        console.log("INSERT INTO DATABASE");
         pool.query('INSERT INTO "user" (username) VALUES ($1);', [currentUser], (err) =>  {
             if (err) {
                 console.error('Error creating user:', err);
@@ -104,6 +105,7 @@ io.on("connection", (socket) => {
 
     socket.on("send_message", (data) => {
         io.emit("receive_message", data);
+        console.log("LKDJAS:LKDASJD:LASJDLAS");
         console.log('data ', data);
 
         pool.query('SELECT user_id FROM "user" WHERE username=$1;', [data.sender], (err, result) => {

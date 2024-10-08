@@ -4,7 +4,7 @@ const pool = require('../db_connection');
 
 router.get('/messages', function (request, response) {
     pool.query(`
-        SELECT m.text AS message , u.username AS sender, TO_CHAR(m.time, 'HH24:MI') AS time
+        SELECT m.text AS message , u.username AS sender, m.time AS time
         FROM message m
         JOIN "user" u ON m.sender = u.user_id
         LIMIT 100;

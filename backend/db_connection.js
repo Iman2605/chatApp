@@ -1,4 +1,4 @@
-const {Pool}  = require('pg');
+const {Pool, Client}  = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
@@ -22,17 +22,27 @@ async function createTable() {
     try {
         await client.connect();
 
-        const createTableQuery = `
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(100),
-                email VARCHAR(100) UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        const createUserTableQuery = `
+            CREATE TABLE IF NOT EXISTS "user" (
+                user_id SERIAL PRIMARY KEY,
+                username VARCHAR(100)
             );
         `;
 
-        const res = await client.query(createTableQuery);
+        const createMessageTableQuery = `
+            CREATE TABLE IF NOT EXISTS "message" (
+                message_id SERIAL PRIMARY KEY,
+                sender BIGINT,
+                text VARCHAR(100),
+                time VARCHAR(200),
+                FOREIGN KEY (sender) REFERENCES "user"(user_id)
+            );
+        `;
+
+        const res = await client.query(createUserTableQuery);
+        const res1 = await client.query(createMessageTableQuery);
         console.log('Table created successfully:', res);
+        console.log('Table created successfully:', res1);
 
     } catch (err) {
         console.error('Error creating table:', err);
