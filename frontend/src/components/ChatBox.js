@@ -1,11 +1,11 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Grid from '@mui/material/Grid2';
-import { Box, Paper, TextField, IconButton, List, ListItem, ListItemText, Divider, Typography } from '@mui/material';
+import { Box, Paper, TextField, IconButton, List, ListItem, Divider, Typography } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import Message from "./Message";
 import axios from 'axios';
 import Cookies from 'js-cookie';
-
+axios.defaults.withCredentials = true;
 
 const getTime = (now) => {
     now = new Date();
@@ -13,54 +13,12 @@ const getTime = (now) => {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
 }
-/*
-const generateRandomUsername = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let username = '';
-    const length = 6;
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        username += characters[randomIndex];
-    }
-    return username;
-}
-*/
-const ChatBox = ({socket}) => {
+
+const ChatBox = ({ socket }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const [currentUser, setCurrentUser] = useState('');
+    const [currentUser, setCurrentUser] = useState(Cookies.get('username'));
     const messageEndRef = useRef(null);
-
-  /*  useEffect(() => {
-        const savedUser = Cookies.get('username');
-        if (savedUser) {
-            setCurrentUser(savedUser);
-            socket.emit('set_username', { username: savedUser });
-        } else {
-            const username = generateRandomUsername();
-            setCurrentUser(username);
-            Cookies.set('username', username, { expires: 7 });
-            socket.emit('set_username', { username });
-        }
-    }, []); */
-
-   /* useEffect(() => {
-        // Check if the username cookie exists
-        let username = Cookies.get('username');
-
-        if (!username) {
-            // If not, listen for the 'set-cookie' event from the server
-            socket.on('set-cookie', (generatedUsername) => {
-                // Set the cookie with the username received from the server
-                Cookies.set('username', generatedUsername, { expires: 7 }); // Cookie expires in 7 days
-                console.log(`Username set: ${generatedUsername}`);
-            });
-        } else {
-            console.log(`Existing username: ${username}`);
-        }
-    }, []);
-    */
-
 
     useEffect(() => {
         axios.get('http://localhost:4000/messages')
@@ -72,9 +30,19 @@ const ChatBox = ({socket}) => {
             });
     }, []);
 
-
     useEffect(() => {
         if (!socket) return;
+
+        console.log('Username cookie:', Cookies.get('username'));
+
+        socket.on('set_cookie', (data) => {
+            Cookies.set('username', data.username, {
+                path: '/',
+                sameSite: 'None',
+                secure: false,
+            });
+            setCurrentUser(data.username);
+        })
 
         socket.on('new_user', (data) => {
             setMessages((prevMessages) => [
@@ -89,6 +57,13 @@ const ChatBox = ({socket}) => {
 
         socket.on('welcome_message', (data) => {
             setCurrentUser(data.username);
+         /*   if (!Cookies.get('username')) {
+                Cookies.set('username', data.username, {
+                    path: '/',
+                    sameSite: 'None',
+                    secure: false,
+                });
+            } */
             setMessages((prevMessages) => [
                 ...prevMessages,
                 {
@@ -100,7 +75,6 @@ const ChatBox = ({socket}) => {
         });
 
         socket.on('receive_message', (data) => {
-            console.log(data.message);
             setMessages((prevMessages) => [
                 ...prevMessages,
                 {
@@ -112,7 +86,6 @@ const ChatBox = ({socket}) => {
         });
 
         socket.on('user_left', (data) => {
-            console.log(data.message);
             setMessages((prevMessages) => [
                 ...prevMessages,
                 {
@@ -134,7 +107,7 @@ const ChatBox = ({socket}) => {
     const handleSend = () => {
         if (newMessage.trim()) {
             const time = getTime(new Date());
-            socket.emit('send_message', {sender: currentUser, time: time, message: newMessage});
+            socket.emit('send_message', { sender: currentUser, time: time, message: newMessage });
             setNewMessage('');
         }
     };
@@ -147,16 +120,17 @@ const ChatBox = ({socket}) => {
         scrollToBottom();
     }, [messages]);
 
-
     return (
         <Grid container
-              sx={{ height: '100%',
+              sx={{
+                  height: '100%',
                   width: '100%',
                   justifyContent: 'center',
                   alignItems: 'center',
                   backgroundColor: '#b2dfdb',
-                  padding: '20px 0'}}>
-            <Grid item  sx={{ height: '100%', width: '100%'}}>
+                  padding: '20px 0'
+              }}>
+            <Grid item sx={{ height: '100%', width: '100%' }}>
                 <Paper
                     square={false}
                     elevation={3}
@@ -168,7 +142,7 @@ const ChatBox = ({socket}) => {
                         margin: 'auto',
                     }}
                 >
-                    <Box sx={{padding: '10px', backgroundColor: '#00796b', color: 'white', borderRadius: '5px 5px 0 0' }}>
+                    <Box sx={{ padding: '10px', backgroundColor: '#00796b', color: 'white', borderRadius: '5px 5px 0 0' }}>
                         <Typography variant="h5" align="center">Chat</Typography>
                     </Box>
 

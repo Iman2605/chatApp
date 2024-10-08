@@ -1,26 +1,32 @@
-
-const pool = require('./db_connection')
+const pool = require('./db_connection');
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require("socket.io");
 const messageRoutes = require('./routes/messages');
 const cookieParser = require('cookie-parser');
+const { serialize, parse } = require("cookie");
 
 const app = express();
 
-app.use(cors());
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    credentials: true
+};
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use('/', messageRoutes);
 app.use(cookieParser());
+app.use('/', messageRoutes);
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
+    cookie: true,
     cors: {
         origin: "http://localhost:3000",
         methods: ["GET", "POST"],
-    },
+        credentials: true
+    }
 });
 
 const generateRandomUsername = () => {
@@ -36,35 +42,49 @@ const generateRandomUsername = () => {
 
 const activeUsers = {};
 const ADMIN = "Admin";
+let currentUser;
+let firstVisit;
+io.engine.on("initial_headers", (headers, request) => {
+    const cookies = request.headers.cookie ? parse(request.headers.cookie) : {};
+    if (!cookies.username) {
+        const newUsername = generateRandomUsername();
+        currentUser = newUsername;
+        firstVisit = true;
 
+        pool.query('INSERT INTO "user" (username) VALUES ($1);', [currentUser], (err) =>  {
+            if (err) {
+                console.error('Error creating user:', err);
+            } else {
+                console.log('User created:', currentUser);
+            }
+        });
+
+        headers["set-cookie"] = serialize("username", newUsername, {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'None',
+            secure: true,
+            maxAge: 7 * 24 * 60 * 60
+
+        });
+
+        io.emit('set_cookie', {username: newUsername});
+
+
+    } else {
+        currentUser = cookies.username;
+        firstVisit = false;
+    }
+});
 
 io.on("connection", (socket) => {
+
     let time = new Date();
 
-    let currentUser = generateRandomUsername();
-/*
-    const cookies = socket.handshake.headers.cookie;
-    let currentUser;
-
-    if (cookies && cookies.includes('username')) {
-        currentUser = cookies.split('; ').find(row => row.startsWith('username')).split('=')[1];
-    } else {
-        currentUser = generateRandomUsername();
-        socket.emit('set-cookie', currentUser);
-    }
-*/
     activeUsers[socket.id] = currentUser;
 
-    console.log(' %s sockets connected', io.engine.clientsCount);
+    console.log('%s sockets connected', io.engine.clientsCount);
     console.log('New user', currentUser);
-
-    pool.query('INSERT INTO "user" (username) VALUES ($1);', [currentUser], (err) =>  {
-        if (err) {
-            console.error('Error creating user:', err);
-        } else {
-            console.log('User created:', currentUser);
-        }
-    });
 
     io.emit('active_users', Object.values(activeUsers));
 
@@ -79,15 +99,18 @@ io.on("connection", (socket) => {
         sender: ADMIN,
         time: time,
         message: `Welcome! Your username is ${currentUser}.`
-    })
+    });
+
 
     socket.on("send_message", (data) => {
         io.emit("receive_message", data);
+        console.log('data ', data);
 
-        pool.query('SELECT user_id FROM "user" where username=$1;', [data.sender], (err, result) => {
-            if(err) {
-                console.error('Error getting user_id;', err)
+        pool.query('SELECT user_id FROM "user" WHERE username=$1;', [data.sender], (err, result) => {
+            if (err) {
+                console.error('Error getting user_id:', err);
             } else {
+                console.log(result.rows);
                 const sender_id = result.rows[0].user_id;
                 pool.query('INSERT INTO message (text, sender, time) VALUES ($1, $2, $3);', [data.message, sender_id, data.time], (err) =>  {
                     if (err) {
@@ -97,12 +120,11 @@ io.on("connection", (socket) => {
                     }
                 });
             }
-        })
-
+        });
     });
 
     socket.on('disconnect', () => {
-        console.log("User disconnected!")
+        console.log("User disconnected!");
         socket.broadcast.emit('user_left', {
             sender: ADMIN,
             time: time,

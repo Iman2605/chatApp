@@ -6,9 +6,8 @@ const useSocket = () => {
     const [socket, setSocket] = useState(null);
 
     useEffect(() => {
-        const newSocket = io(SERVER);
+        const newSocket = io(SERVER, {withCredentials: true});
         setSocket(newSocket);
-        console.log('New user from frontend');
 
         return () => {
             newSocket.disconnect();
