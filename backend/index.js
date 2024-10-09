@@ -6,6 +6,7 @@ const { Server } = require("socket.io");
 const messageRoutes = require('./routes/messages');
 const cookieParser = require('cookie-parser');
 const { serialize, parse } = require("cookie");
+require('./db_init');
 
 const app = express();
 
