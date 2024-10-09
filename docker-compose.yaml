@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   frontend:
     build: ./frontend
@@ -5,9 +6,9 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - backend  # Ensure the frontend waits for the backend to start
+      - backend
     environment:
-      - BACKEND_URL=http://backend:4000  # Backend URL for socket connection
+      - BACKEND_URL=http://backend:4000
 
   backend:
     build: ./backend
@@ -22,9 +23,10 @@ services:
       - DATABASE_USER=postgres
       - DATABASE_PASS=iman123
       - DATABASE_NAME=chat_app
-      - SOCKET_PORT=4000  # Specify the port for the socket server
+      - SOCKET_PORT=4000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres
@@ -35,6 +37,11 @@ services:
       POSTGRES_DB: chat_app
     ports:
       - '5432:5432'
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   default:

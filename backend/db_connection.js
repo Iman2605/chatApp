@@ -33,8 +33,8 @@ async function createTable() {
             CREATE TABLE IF NOT EXISTS "message" (
                 message_id SERIAL PRIMARY KEY,
                 sender BIGINT,
-                text VARCHAR(100),
-                time VARCHAR(200),
+                text VARCHAR(300),
+                time TIME,
                 FOREIGN KEY (sender) REFERENCES "user"(user_id)
             );
         `;

@@ -33,17 +33,15 @@ const ChatBox = ({ socket }) => {
     useEffect(() => {
         if (!socket) return;
 
-        console.log('Username cookie:', Cookies.get('username'));
-
         socket.on('set_cookie', (data) => {
             Cookies.set('username', data.username, {
                 path: '/',
                 sameSite: 'None',
                 secure: false,
-                maxAge: 7 * 24 * 60 * 60
+                expires: 7
             });
             setCurrentUser(data.username);
-        })
+        });
 
         socket.on('new_user', (data) => {
             setMessages((prevMessages) => [

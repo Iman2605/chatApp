@@ -43,14 +43,13 @@ const generateRandomUsername = () => {
 const activeUsers = {};
 const ADMIN = "Admin";
 let currentUser;
-let firstVisit;
+
 io.engine.on("initial_headers", (headers, request) => {
     const cookies = request.headers.cookie ? parse(request.headers.cookie) : {};
     console.log("Cookies: " , cookies);
     if (!cookies.username) {
         const newUsername = generateRandomUsername();
         currentUser = newUsername;
-        firstVisit = true;
         pool.query('INSERT INTO "user" (username) VALUES ($1);', [currentUser], (err) =>  {
             if (err) {
                 console.error('Error creating user:', err);
@@ -70,25 +69,19 @@ io.engine.on("initial_headers", (headers, request) => {
 
         io.emit('set_cookie', {username: newUsername});
 
-
     } else {
         currentUser = cookies.username;
-        firstVisit = false;
     }
 });
 
 io.on("connection", (socket) => {
-
     const cookies = socket.handshake.headers.cookie ? parse(socket.handshake.headers.cookie) : {};
     currentUser = cookies.username || currentUser;
-    console.log('Trenutni user ', currentUser);
     let time = new Date();
 
     if (!Object.values(activeUsers).includes(currentUser)) {
         activeUsers[socket.id] = currentUser;
     }
-
-    console.log('%s sockets connected', io.engine.clientsCount);
 
     io.emit('active_users', Object.values(activeUsers));
 
@@ -105,10 +98,9 @@ io.on("connection", (socket) => {
         message: `Welcome! Your username is ${currentUser}.`
     });
 
-
     socket.on("send_message", (data) => {
         io.emit("receive_message", data);
-        console.log('data ', data);
+        console.log('message data ', data);
 
         pool.query('SELECT user_id FROM "user" WHERE username=$1;', [data.sender], (err, result) => {
             if (err) {
@@ -116,7 +108,8 @@ io.on("connection", (socket) => {
             } else {
                 console.log(result.rows);
                 const sender_id = result.rows[0].user_id;
-                pool.query('INSERT INTO message (text, sender, time) VALUES ($1, $2, $3);', [data.message, sender_id, data.time], (err) =>  {
+                pool.query('INSERT INTO message (text, sender, time) VALUES ($1, $2, TO_TIMESTAMP($3, \'HH24:MI\')::TIME);',
+                    [data.message, sender_id, data.time], (err) =>  {
                     if (err) {
                         console.error('Error adding message:', err);
                     } else {

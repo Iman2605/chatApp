@@ -10,9 +10,7 @@ const useSocket = () => {
             withCredentials: true,
             transports: ['websocket'],
         });
-
         setSocket(newSocket);
-
         return () => {
             newSocket.disconnect();
         };

@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import ChatBox from "./components/ChatBox";
 import Grid from "@mui/material/Grid2";
 import ActiveUsers from "./components/ActiveUsers";
 import useSocket from "./services/socket";
-
-
 
 const App = () => {
     const socket = useSocket();
