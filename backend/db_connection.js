@@ -41,8 +41,8 @@ async function createTable() {
 
         const res = await client.query(createUserTableQuery);
         const res1 = await client.query(createMessageTableQuery);
-        console.log('Table created successfully:', res);
-        console.log('Table created successfully:', res1);
+        console.log('Table user created successfully:', res);
+        console.log('Table message created successfully:', res1);
 
     } catch (err) {
         console.error('Error creating table:', err);

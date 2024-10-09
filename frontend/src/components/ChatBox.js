@@ -40,6 +40,7 @@ const ChatBox = ({ socket }) => {
                 path: '/',
                 sameSite: 'None',
                 secure: false,
+                maxAge: 7 * 24 * 60 * 60
             });
             setCurrentUser(data.username);
         })
@@ -57,13 +58,6 @@ const ChatBox = ({ socket }) => {
 
         socket.on('welcome_message', (data) => {
             setCurrentUser(data.username);
-         /*   if (!Cookies.get('username')) {
-                Cookies.set('username', data.username, {
-                    path: '/',
-                    sameSite: 'None',
-                    secure: false,
-                });
-            } */
             setMessages((prevMessages) => [
                 ...prevMessages,
                 {
@@ -101,6 +95,7 @@ const ChatBox = ({ socket }) => {
             socket.off('welcome_message');
             socket.off('receive_message');
             socket.off('user_left');
+            socket.off('set_cookie');
         };
     }, [socket]);
 

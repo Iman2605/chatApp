@@ -6,7 +6,11 @@ const useSocket = () => {
     const [socket, setSocket] = useState(null);
 
     useEffect(() => {
-        const newSocket = io(SERVER, {withCredentials: true});
+        const newSocket = io(SERVER, {
+            withCredentials: true,
+            transports: ['websocket'],
+        });
+
         setSocket(newSocket);
 
         return () => {

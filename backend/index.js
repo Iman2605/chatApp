@@ -46,17 +46,16 @@ let currentUser;
 let firstVisit;
 io.engine.on("initial_headers", (headers, request) => {
     const cookies = request.headers.cookie ? parse(request.headers.cookie) : {};
-    console.log("Pocetak: " + cookies);
+    console.log("Cookies: " , cookies);
     if (!cookies.username) {
         const newUsername = generateRandomUsername();
         currentUser = newUsername;
         firstVisit = true;
-        console.log("INSERT INTO DATABASE");
         pool.query('INSERT INTO "user" (username) VALUES ($1);', [currentUser], (err) =>  {
             if (err) {
                 console.error('Error creating user:', err);
             } else {
-                console.log('User created:', currentUser);
+                console.log('User added to db:', currentUser);
             }
         });
 
@@ -80,12 +79,16 @@ io.engine.on("initial_headers", (headers, request) => {
 
 io.on("connection", (socket) => {
 
+    const cookies = socket.handshake.headers.cookie ? parse(socket.handshake.headers.cookie) : {};
+    currentUser = cookies.username || currentUser;
+    console.log('Trenutni user ', currentUser);
     let time = new Date();
 
-    activeUsers[socket.id] = currentUser;
+    if (!Object.values(activeUsers).includes(currentUser)) {
+        activeUsers[socket.id] = currentUser;
+    }
 
     console.log('%s sockets connected', io.engine.clientsCount);
-    console.log('New user', currentUser);
 
     io.emit('active_users', Object.values(activeUsers));
 
@@ -105,7 +108,6 @@ io.on("connection", (socket) => {
 
     socket.on("send_message", (data) => {
         io.emit("receive_message", data);
-        console.log("LKDJAS:LKDASJD:LASJDLAS");
         console.log('data ', data);
 
         pool.query('SELECT user_id FROM "user" WHERE username=$1;', [data.sender], (err, result) => {
@@ -127,12 +129,13 @@ io.on("connection", (socket) => {
 
     socket.on('disconnect', () => {
         console.log("User disconnected!");
+        delete activeUsers[socket.id];
         socket.broadcast.emit('user_left', {
             sender: ADMIN,
             time: time,
             message: `${currentUser} has left the chat.`
         });
-        delete activeUsers[socket.id];
+
         io.emit('active_users', Object.values(activeUsers));
     });
 
